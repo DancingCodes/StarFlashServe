@@ -2,6 +2,8 @@ const express = require('express');
 
 const User = require('../../mongoDB/user')
 const Article = require('../../mongoDB/article')
+const ArticleMessageList = require('../../mongoDB/articleMessageList')
+
 
 const { v4 } = require('uuid');
 
@@ -16,14 +18,20 @@ router.post('/user/signUp', async (req, res) => {
     if (!user) {
         // 创建用户
         const id = v4()
-        await User.create({
+        await new User({
             userName: req.body.userName,
             userAccount: req.body.userAccount,
             userPassword: req.body.userPassword,
             userPcture: req.body.userPcture,
             userId: id,
-            collectArticleIdList: []
-        })
+            collectArticleIdList: [],
+        }).save()
+
+        // 初始化用户文章消息列表
+        await new ArticleMessageList({
+            userId: id,
+            messageList: []
+        }).save()
 
         // 设置token
         let token = jwt.sign({
@@ -70,6 +78,10 @@ router.post('/user/login', async (req, res) => {
 // 注销
 router.delete('/user/logoff', async (req, res) => {
     await User.findOneAndDelete({ userId: req.auth.userId })
+
+    // 删除用户文章消息列表
+    await ArticleMessageList.findOneAndDelete({ userId: req.auth.userId })
+
     res.send({
         code: 200,
     })
@@ -106,12 +118,6 @@ router.put('/user/modifyPassword', async (req, res) => {
             message: '密码错误'
         })
     }
-
-
-
-
-
-
 
 })
 
@@ -192,6 +198,24 @@ router.put('/user/collectArticle', async (req, res) => {
         await User.findOneAndUpdate({ userId: req.auth.userId }, {
             $set: { collectArticleIdList: collectArticleIdList }
         })
+
+        // 添加文章消息
+        const { messageList } = await ArticleMessageList.findOne({ userId: req.body.articleId })
+        messageList.push({
+            // 发起人
+            userId: req.auth.userId,
+            // 行为
+            content: '收藏了您的文章',
+            // 目标
+            articleId: req.body.articleId,
+            // 什么时候干的
+            createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+            // 是否是新消息
+            isNew: true
+        })
+        await ArticleMessageList.findByIdAndUpdate({ userId: req.auth.userId }, {
+            $set: { messageList: messageList }
+        })
     }
     res.send({
         code: 200,
@@ -205,6 +229,24 @@ router.put('/user/cancelCollectArticle', async (req, res) => {
         collectArticleIdList = collectArticleIdList.filter(item => item !== req.body.articleId)
         await User.findOneAndUpdate({ userId: req.auth.userId }, {
             $set: { collectArticleIdList: collectArticleIdList }
+        })
+
+        // 添加文章消息
+        const { messageList } = await ArticleMessageList.findOne({ userId: req.body.articleId })
+        messageList.push({
+            // 发起人
+            userId: req.auth.userId,
+            // 行为
+            content: '取消收藏了您的文章',
+            // 目标
+            articleId: req.body.articleId,
+            // 什么时候干的
+            createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+            // 是否是新消息
+            isNew: true
+        })
+        await ArticleMessageList.findByIdAndUpdate({ userId: req.auth.userId }, {
+            $set: { messageList: messageList }
         })
     }
     res.send({
