@@ -28,19 +28,6 @@ router.post('/user/signUp', async (req, res) => {
             userId: id,
         }).save()
 
-        // 初始化用户收藏文章列表
-        await new UserCollectArticle({
-            userId: id,
-            collectList: []
-        }).save()
-
-        // 初始化用户文章消息列表
-        await new ArticleMessage({
-            userId: id,
-            messageList: []
-        }).save()
-
-
         // 设置token
         let token = jwt.sign({
             userAccount: req.body.userAccount,
@@ -151,14 +138,14 @@ router.get('/user/getArticleList', async (req, res) => {
 
     // 查找用户
     const user = await User.findOne({ userId: req.auth.userId })
-    const { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
     for (let i = 0; i < list.length; i++) {
         // 设置文章作者信息
         list[i].userName = user.userName
         list[i].userPcture = user.userPcture
 
         // 设置用户是否收藏
-        if (collectList.some(item => item.articleId === list[i].articleId)) {
+        const collectArticle = await UserCollectArticle.findOne({ userId: req.auth.userId, articleId: list[i].articleId })
+        if (collectArticle) {
             list[i].isCollect = true
         } else {
             list[i].isCollect = false
@@ -175,26 +162,17 @@ router.get('/user/getArticleList', async (req, res) => {
 
 // 获取收藏文章列表
 router.get('/user/getCollectArticleList', async (req, res) => {
-    let { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
-    const collectArticleIdList = collectList.map(item => item.articleId).reverse()
-    let list = await Article.find({ articleId: collectArticleIdList }, { _id: 0, __v: 0 }).lean()
-    const total = await Article.find({ articleId: collectArticleIdList }).count()
-
-    // 对数组根据用户
-    list = list.sort((a, b) => {
-        return collectArticleIdList.indexOf(a.articleId) < collectArticleIdList.indexOf(b.articleId) ? -1 : 1
-    })
-
-    list = list.splice(req.query.pageNo - 1 * req.query.pageSize, req.query.pageSize)
+    const list = await UserCollectArticle.find({ userId: req.auth.userId }, { _id: 0, __v: 0 }).sort({ createTime: -1 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
+    const total = await UserCollectArticle.find({ userId: req.auth.userId }).count()
 
 
     for (let i = 0; i < list.length; i++) {
-        // 查找用户
-        const author = await User.findOne({ userId: list[i].authorId })
+        // 设置文章信息
+        const article = await Article.findOne({ articleId: list[i].articleId }, { _id: 0, __v: 0 }).lean()
         // 设置文章作者信息
-        list[i].userName = author.userName
-        list[i].userPcture = author.userPcture
-
+        list[i].article = article
+        const author = await User.findOne({ userId: article.authorId }, { _id: 0, __v: 0, userPassword: 0 })
+        list[i].author = author
         // 设置用户是否收藏
         list[i].isCollect = true
     }
@@ -209,36 +187,33 @@ router.get('/user/getCollectArticleList', async (req, res) => {
 
 // 收藏文章
 router.put('/user/collectArticle', async (req, res) => {
-    const { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
-
-    if (!collectList.some(item => item.articleId === req.body.articleId)) {
-        collectList.push({
+    const collectArticle = await UserCollectArticle.findOne({ userId: req.auth.userId, articleId: req.body.articleId })
+    if (!collectArticle) {
+        await new UserCollectArticle({
+            userId: req.auth.userId,
             articleId: req.body.articleId,
             createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-        })
-        await UserCollectArticle.findOneAndUpdate({ userId: req.auth.userId }, {
-            $set: { collectList: collectList }
-        })
+        }).save()
 
-        if (req.auth.userId !== req.body.userId) {
-            // 添加文章消息
-            const { messageList } = await ArticleMessage.findOne({ userId: req.body.authorId })
-            messageList.unshift({
-                // 发起人
-                userId: req.auth.userId,
-                // 行为
-                content: '收藏了您的文章',
-                // 目标
-                articleId: req.body.articleId,
-                // 什么时候干的
-                createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-                // 是否是新消息
-                isNew: true
-            })
-            await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
-                $set: { messageList: messageList }
-            })
-        }
+        // if (req.auth.userId !== req.body.userId) {
+        //     // 添加文章消息
+        //     const { messageList } = await UserCollectArticle.findOne({ userId: req.body.authorId })
+        //     messageList.unshift({
+        //         // 发起人
+        //         userId: req.auth.userId,
+        //         // 行为
+        //         content: '收藏了您的文章',
+        //         // 目标
+        //         articleId: req.body.articleId,
+        //         // 什么时候干的
+        //         createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+        //         // 是否是新消息
+        //         isNew: true
+        //     })
+        //     await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
+        //         $set: { messageList: messageList }
+        //     })
+        // }
 
     }
     res.send({
@@ -248,32 +223,29 @@ router.put('/user/collectArticle', async (req, res) => {
 
 // 取消收藏文章
 router.put('/user/cancelCollectArticle', async (req, res) => {
-    let { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
+    const collectArticle = await UserCollectArticle.findOne({ userId: req.auth.userId, articleId: req.body.articleId })
+    if (collectArticle) {
+        await UserCollectArticle.findOneAndDelete({ userId: req.auth.userId, articleId: req.body.articleId })
 
-    if (collectList.some(item => item.articleId === req.body.articleId)) {
-        collectList = collectList.filter(item => item.articleId !== req.body.articleId)
-        await UserCollectArticle.findOneAndUpdate({ userId: req.auth.userId }, {
-            $set: { collectList: collectList }
-        })
-        if (req.auth.userId !== req.body.userId) {
-            // 添加文章消息
-            const { messageList } = await ArticleMessage.findOne({ userId: req.body.authorId })
-            messageList.push({
-                // 发起人
-                userId: req.auth.userId,
-                // 行为
-                content: '取消收藏了您的文章',
-                // 目标
-                articleId: req.body.articleId,
-                // 什么时候干的
-                createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-                // 是否是新消息
-                isNew: true
-            })
-            await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
-                $set: { messageList: messageList }
-            })
-        }
+        // if (req.auth.userId !== req.body.userId) {
+        //     // 添加文章消息
+        //     const { messageList } = await ArticleMessage.findOne({ userId: req.body.authorId })
+        //     messageList.push({
+        //         // 发起人
+        //         userId: req.auth.userId,
+        //         // 行为
+        //         content: '取消收藏了您的文章',
+        //         // 目标
+        //         articleId: req.body.articleId,
+        //         // 什么时候干的
+        //         createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+        //         // 是否是新消息
+        //         isNew: true
+        //     })
+        //     await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
+        //         $set: { messageList: messageList }
+        //     })
+        // }
     }
     res.send({
         code: 200,

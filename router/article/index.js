@@ -33,8 +33,8 @@ router.get('/article/getArticleList', async (req, res) => {
 
         // 设置用户是否收藏
         if (user) {
-            const { collectList } = await UserCollectArticle.findOne({ userId: user.userId })
-            if (collectList.some(item => item.articleId === list[i].articleId)) {
+            const collectArticle = await UserCollectArticle.findOne({ userId: user.userId, articleId: list[i].articleId })
+            if (collectArticle) {
                 list[i].isCollect = true
             } else {
                 list[i].isCollect = false
