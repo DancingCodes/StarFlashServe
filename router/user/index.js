@@ -162,19 +162,23 @@ router.get('/user/getArticleList', async (req, res) => {
 
 // 获取收藏文章列表
 router.get('/user/getCollectArticleList', async (req, res) => {
-    const list = await UserCollectArticle.find({ userId: req.auth.userId }, { _id: 0, __v: 0 }).sort({ createTime: -1 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
+    const collectArticleList = await UserCollectArticle.find({ userId: req.auth.userId }, { _id: 0, __v: 0 }).sort({ createTime: -1 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
     const total = await UserCollectArticle.find({ userId: req.auth.userId }).count()
+    const list = []
 
-
-    for (let i = 0; i < list.length; i++) {
+    for (let i = 0; i < collectArticleList.length; i++) {
         // 设置文章信息
-        const article = await Article.findOne({ articleId: list[i].articleId }, { _id: 0, __v: 0 }).lean()
+        const article = await Article.findOne({ articleId: collectArticleList[i].articleId }, { _id: 0, __v: 0 }).lean()
         // 设置文章作者信息
-        list[i].article = article
-        const author = await User.findOne({ userId: article.authorId }, { _id: 0, __v: 0, userPassword: 0 })
-        list[i].author = author
-        // 设置用户是否收藏
-        list[i].isCollect = true
+        const author = await User.findOne({ userId: article.authorId })
+
+        list.push({
+            ...article,
+            userName: author.userName,
+            userPcture: author.userPcture,
+            collectTime: collectArticleList[i].createTime,
+            isCollect: true
+        })
     }
 
     res.send({
