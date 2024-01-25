@@ -8,7 +8,6 @@ const userSchema = new mongoose.Schema({
     userPassword: String,
     userPcture: String,
     userId: String,
-    collectArticleIdList: Array
 })
 
 // 创建集合
@@ -21,7 +20,6 @@ const User = mongoose.model('User', userSchema);
 //     userPassword: '123456',
 //     userPcture: 'https://obs-sdjn.cucloud.cn/village/vil/2023/04/27/1498185a-3784-4e01-93c7-3acbe1fd2198.jpg',
 //     userId: '1',
-//     collectArticleIdList: []
 // })
 
 module.exports = User

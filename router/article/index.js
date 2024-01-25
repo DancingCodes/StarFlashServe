@@ -2,6 +2,8 @@ const express = require('express');
 
 const Article = require('../../mongoDB/article')
 const User = require('../../mongoDB/user')
+const UserCollectArticle = require('../../mongoDB/UserCollectArticle')
+
 
 const { v4 } = require('uuid');
 
@@ -31,7 +33,8 @@ router.get('/article/getArticleList', async (req, res) => {
 
         // 设置用户是否收藏
         if (user) {
-            if (user.collectArticleIdList.includes(list[i].articleId)) {
+            const { collectList } = await UserCollectArticle.findOne({ userId: user.userId })
+            if (collectList.some(item => item.articleId === list[i].articleId)) {
                 list[i].isCollect = true
             } else {
                 list[i].isCollect = false

@@ -2,6 +2,7 @@ const express = require('express');
 
 const User = require('../../mongoDB/user')
 const Article = require('../../mongoDB/article')
+const UserCollectArticle = require('../../mongoDB/UserCollectArticle')
 const ArticleMessage = require('../../mongoDB/articleMessage')
 
 const moment = require('moment')
@@ -25,7 +26,12 @@ router.post('/user/signUp', async (req, res) => {
             userPassword: req.body.userPassword,
             userPcture: req.body.userPcture,
             userId: id,
-            collectArticleIdList: [],
+        }).save()
+
+        // 初始化用户收藏文章列表
+        await new UserCollectArticle({
+            userId: id,
+            collectList: []
         }).save()
 
         // 初始化用户文章消息列表
@@ -33,6 +39,7 @@ router.post('/user/signUp', async (req, res) => {
             userId: id,
             messageList: []
         }).save()
+
 
         // 设置token
         let token = jwt.sign({
@@ -124,7 +131,7 @@ router.put('/user/modifyPassword', async (req, res) => {
 
 // 获取用户信息
 router.get('/user/info', async (req, res) => {
-    const user = await User.findOne({ userId: req.auth.userId }, { _id: 0, __v: 0, userPassword: 0, collectArticleIdList: 0 }).lean()
+    const user = await User.findOne({ userId: req.auth.userId }, { _id: 0, __v: 0, userPassword: 0 }).lean()
 
     if (!user) {
         res.send({ code: 401 })
@@ -144,13 +151,14 @@ router.get('/user/getArticleList', async (req, res) => {
 
     // 查找用户
     const user = await User.findOne({ userId: req.auth.userId })
+    const { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
     for (let i = 0; i < list.length; i++) {
         // 设置文章作者信息
         list[i].userName = user.userName
         list[i].userPcture = user.userPcture
 
         // 设置用户是否收藏
-        if (user.collectArticleIdList.includes(list[i].articleId)) {
+        if (collectList.some(item => item.articleId === list[i].articleId)) {
             list[i].isCollect = true
         } else {
             list[i].isCollect = false
@@ -167,9 +175,9 @@ router.get('/user/getArticleList', async (req, res) => {
 
 // 获取收藏文章列表
 router.get('/user/getCollectArticleList', async (req, res) => {
-    const user = await User.findOne({ userId: req.auth.userId })
-    const list = await Article.find({ articleId: user.collectArticleIdList }, { _id: 0, __v: 0 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
-    const total = await Article.find({ articleId: user.collectArticleIdList }).count()
+    const { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
+    const list = await Article.find({ articleId: collectList.map(item => item.articleId) }, { _id: 0, __v: 0 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
+    const total = await Article.find({ articleId: collectList.map(item => item.articleId) }).count()
 
 
     for (let i = 0; i < list.length; i++) {
@@ -193,11 +201,15 @@ router.get('/user/getCollectArticleList', async (req, res) => {
 
 // 收藏文章
 router.put('/user/collectArticle', async (req, res) => {
-    const { collectArticleIdList } = await User.findOne({ userId: req.auth.userId })
-    if (!collectArticleIdList.includes(req.body.articleId)) {
-        collectArticleIdList.push(req.body.articleId)
-        await User.findOneAndUpdate({ userId: req.auth.userId }, {
-            $set: { collectArticleIdList: collectArticleIdList }
+    const { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
+
+    if (!collectList.some(item => item.articleId === req.body.articleId)) {
+        collectList.push({
+            articleId: req.body.articleId,
+            createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+        })
+        await UserCollectArticle.findOneAndUpdate({ userId: req.auth.userId }, {
+            $set: { collectList: collectList }
         })
 
         if (req.auth.userId !== req.body.userId) {
@@ -228,11 +240,12 @@ router.put('/user/collectArticle', async (req, res) => {
 
 // 取消收藏文章
 router.put('/user/cancelCollectArticle', async (req, res) => {
-    let { collectArticleIdList } = await User.findOne({ userId: req.auth.userId })
-    if (collectArticleIdList.includes(req.body.articleId)) {
-        collectArticleIdList = collectArticleIdList.filter(item => item !== req.body.articleId)
-        await User.findOneAndUpdate({ userId: req.auth.userId }, {
-            $set: { collectArticleIdList: collectArticleIdList }
+    let { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
+
+    if (collectList.some(item => item.articleId === req.body.articleId)) {
+        collectList = collectList.filter(item => item.articleId !== req.body.articleId)
+        await UserCollectArticle.findOneAndUpdate({ userId: req.auth.userId }, {
+            $set: { collectList: collectList }
         })
         if (req.auth.userId !== req.body.userId) {
             // 添加文章消息
