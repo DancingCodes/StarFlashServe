@@ -207,7 +207,7 @@ router.put('/user/collectArticle', async (req, res) => {
                 content: '收藏了您的文章',
                 articleId: req.body.articleId,
                 createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-                isNew: true
+                isNewMessage: true
             }).save()
         }
 
@@ -231,7 +231,7 @@ router.put('/user/cancelCollectArticle', async (req, res) => {
                 content: '取消收藏了您的文章',
                 articleId: req.body.articleId,
                 createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-                isNew: true
+                isNewMessage: true
             }).save()
         }
     }

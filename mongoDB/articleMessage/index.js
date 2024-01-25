@@ -8,7 +8,7 @@ const articleMessageSchema = new mongoose.Schema({
     content: String,
     articleId: String,
     createTime: String,
-    isNew: Boolean
+    isNewMessage: Boolean
 })
 
 // 创建集合
@@ -21,7 +21,7 @@ const ArticleMessage = mongoose.model('ArticleMessage', articleMessageSchema);
 //     content: '收藏了您的文章',
 //     articleId: '1',
 //     createTime: '2000-12-27 12:00:00',
-//     isNew: true
+//     isNewMessage: true
 // })
 
 module.exports = ArticleMessage
