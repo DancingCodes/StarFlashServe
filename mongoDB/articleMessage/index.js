@@ -2,16 +2,16 @@
 const mongoose = require('mongoose');
 
 // 创建文章消息规则
-const articleMessageListSchema = new mongoose.Schema({
+const articleMessageSchema = new mongoose.Schema({
     userId: String,
     messageList: Array
 })
 
 // 创建集合
-const ArticleMessageList = mongoose.model('ArticleMessageList', articleMessageListSchema);
+const ArticleMessage = mongoose.model('ArticleMessage', articleMessageSchema);
 
 // // 创建初始文章消息
-// ArticleMessageList.create({
+// ArticleMessage.create({
 //     userId: '1',
 //     messageList: [{
 //         // 发起人
@@ -27,4 +27,4 @@ const ArticleMessageList = mongoose.model('ArticleMessageList', articleMessageLi
 //     }]
 // })
 
-module.exports = ArticleMessageList
+module.exports = ArticleMessage

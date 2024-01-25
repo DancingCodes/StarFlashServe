@@ -2,8 +2,9 @@ const express = require('express');
 
 const User = require('../../mongoDB/user')
 const Article = require('../../mongoDB/article')
-const ArticleMessageList = require('../../mongoDB/articleMessageList')
+const ArticleMessage = require('../../mongoDB/articleMessage')
 
+const moment = require('moment')
 
 const { v4 } = require('uuid');
 
@@ -28,7 +29,7 @@ router.post('/user/signUp', async (req, res) => {
         }).save()
 
         // 初始化用户文章消息列表
-        await new ArticleMessageList({
+        await new ArticleMessage({
             userId: id,
             messageList: []
         }).save()
@@ -80,7 +81,7 @@ router.delete('/user/logoff', async (req, res) => {
     await User.findOneAndDelete({ userId: req.auth.userId })
 
     // 删除用户文章消息列表
-    await ArticleMessageList.findOneAndDelete({ userId: req.auth.userId })
+    await ArticleMessage.findOneAndDelete({ userId: req.auth.userId })
 
     res.send({
         code: 200,
@@ -138,7 +139,7 @@ router.get('/user/info', async (req, res) => {
 
 // 获取文章列表
 router.get('/user/getArticleList', async (req, res) => {
-    const list = await Article.find({ userId: req.auth.userId }, { _id: 0, __v: 0 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
+    const list = await Article.find({ userId: req.auth.userId }, { _id: 0, __v: 0 }).sort({ createTime: -1 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
     const total = await Article.find({}).count()
 
     // 查找用户
@@ -200,8 +201,8 @@ router.put('/user/collectArticle', async (req, res) => {
         })
 
         // 添加文章消息
-        const { messageList } = await ArticleMessageList.findOne({ userId: req.body.articleId })
-        messageList.push({
+        const { messageList } = await ArticleMessage.findOne({ userId: req.body.userId })
+        messageList.unshift({
             // 发起人
             userId: req.auth.userId,
             // 行为
@@ -213,7 +214,7 @@ router.put('/user/collectArticle', async (req, res) => {
             // 是否是新消息
             isNew: true
         })
-        await ArticleMessageList.findByIdAndUpdate({ userId: req.auth.userId }, {
+        await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
             $set: { messageList: messageList }
         })
     }
@@ -232,7 +233,7 @@ router.put('/user/cancelCollectArticle', async (req, res) => {
         })
 
         // 添加文章消息
-        const { messageList } = await ArticleMessageList.findOne({ userId: req.body.articleId })
+        const { messageList } = await ArticleMessage.findOne({ userId: req.body.userId })
         messageList.push({
             // 发起人
             userId: req.auth.userId,
@@ -245,7 +246,7 @@ router.put('/user/cancelCollectArticle', async (req, res) => {
             // 是否是新消息
             isNew: true
         })
-        await ArticleMessageList.findByIdAndUpdate({ userId: req.auth.userId }, {
+        await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
             $set: { messageList: messageList }
         })
     }

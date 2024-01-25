@@ -12,7 +12,7 @@ const router = express.Router();
 const localPath = require('../../public/localPath')
 // 获取文章列表
 router.get('/article/getArticleList', async (req, res) => {
-    const list = await Article.find({}, { _id: 0, __v: 0 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
+    const list = await Article.find({}, { _id: 0, __v: 0 }).sort({ createTime: -1 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
     const total = await Article.find({}).count()
 
     // 为列表添加用户信息
