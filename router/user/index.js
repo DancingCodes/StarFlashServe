@@ -199,10 +199,11 @@ router.put('/user/collectArticle', async (req, res) => {
             createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
         }).save()
 
-        if (req.auth.userId !== req.body.userId) {
+        if (req.auth.userId !== req.body.authorId) {
             // 添加文章消息
             new ArticleMessage({
-                userId: req.auth.userId,
+                initiator: req.auth.userId,
+                receiver: req.body.authorId,
                 content: '收藏了您的文章',
                 articleId: req.body.articleId,
                 createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
@@ -222,11 +223,11 @@ router.put('/user/cancelCollectArticle', async (req, res) => {
     if (collectArticle) {
         await UserCollectArticle.findOneAndDelete({ userId: req.auth.userId, articleId: req.body.articleId })
 
-        if (req.auth.userId !== req.body.userId) {
-            // 添加文章消息
+        if (req.auth.userId !== req.body.authorId) {
             // 添加文章消息
             new ArticleMessage({
-                userId: req.auth.userId,
+                initiator: req.auth.userId,
+                receiver: req.body.authorId,
                 content: '取消收藏了您的文章',
                 articleId: req.body.articleId,
                 createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
@@ -236,6 +237,31 @@ router.put('/user/cancelCollectArticle', async (req, res) => {
     }
     res.send({
         code: 200,
+    })
+})
+
+// 获取文章消息
+router.get('/user/getArticleMessage', async (req, res) => {
+    const articleMessageList = await ArticleMessage.find({ receiver: req.auth.userId }, { _id: 0, __v: 0 }).sort({ createTime: -1 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
+    const total = await ArticleMessage.find({ receiver: req.auth.userId }).count()
+    const list = []
+
+    for (let i = 0; i < articleMessageList.length; i++) {
+        const user = await User.findOne({ userId: articleMessageList[i].initiator })
+        const article = await Article.findOne({ articleId: articleMessageList[i].articleId })
+
+        list.push({
+            ...articleMessageList[i],
+            initiatorName: user.userName,
+            articleContent: article.articleContent
+        })
+    }
+
+    res.send({
+        code: 200,
+        data: {
+            list, total
+        }
     })
 })
 
