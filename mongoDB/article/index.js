@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 
 const articleSchema = new mongoose.Schema({
     articleContent: String,
-    userId: String,
+    authorId: String,
     articleId: String,
     createTime: String,
 })
@@ -18,7 +18,7 @@ const Article = mongoose.model('Article', articleSchema);
 // Article.create({
 //     articleContent: 'articleContent',
 //     articleId: '1',
-//     userId: '1',
+//     authorId: '1',
 //     createTime: '2000-12-27 12:00:00'
 // })
 

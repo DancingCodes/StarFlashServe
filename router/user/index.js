@@ -139,7 +139,7 @@ router.get('/user/info', async (req, res) => {
 
 // 获取文章列表
 router.get('/user/getArticleList', async (req, res) => {
-    const list = await Article.find({ userId: req.auth.userId }, { _id: 0, __v: 0 }).sort({ createTime: -1 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
+    const list = await Article.find({ authorId: req.auth.userId }, { _id: 0, __v: 0 }).sort({ createTime: -1 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
     const total = await Article.find({}).count()
 
     // 查找用户
@@ -174,7 +174,7 @@ router.get('/user/getCollectArticleList', async (req, res) => {
 
     for (let i = 0; i < list.length; i++) {
         // 查找用户
-        const author = await User.findOne({ userId: list[i].userId })
+        const author = await User.findOne({ userId: list[i].authorId })
         // 设置文章作者信息
         list[i].userName = author.userName
         list[i].userPcture = author.userPcture
@@ -200,23 +200,26 @@ router.put('/user/collectArticle', async (req, res) => {
             $set: { collectArticleIdList: collectArticleIdList }
         })
 
-        // 添加文章消息
-        const { messageList } = await ArticleMessage.findOne({ userId: req.body.userId })
-        messageList.unshift({
-            // 发起人
-            userId: req.auth.userId,
-            // 行为
-            content: '收藏了您的文章',
-            // 目标
-            articleId: req.body.articleId,
-            // 什么时候干的
-            createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-            // 是否是新消息
-            isNew: true
-        })
-        await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
-            $set: { messageList: messageList }
-        })
+        if (req.auth.userId !== req.body.userId) {
+            // 添加文章消息
+            const { messageList } = await ArticleMessage.findOne({ userId: req.body.authorId })
+            messageList.unshift({
+                // 发起人
+                userId: req.auth.userId,
+                // 行为
+                content: '收藏了您的文章',
+                // 目标
+                articleId: req.body.articleId,
+                // 什么时候干的
+                createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+                // 是否是新消息
+                isNew: true
+            })
+            await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
+                $set: { messageList: messageList }
+            })
+        }
+
     }
     res.send({
         code: 200,
@@ -231,24 +234,25 @@ router.put('/user/cancelCollectArticle', async (req, res) => {
         await User.findOneAndUpdate({ userId: req.auth.userId }, {
             $set: { collectArticleIdList: collectArticleIdList }
         })
-
-        // 添加文章消息
-        const { messageList } = await ArticleMessage.findOne({ userId: req.body.userId })
-        messageList.push({
-            // 发起人
-            userId: req.auth.userId,
-            // 行为
-            content: '取消收藏了您的文章',
-            // 目标
-            articleId: req.body.articleId,
-            // 什么时候干的
-            createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-            // 是否是新消息
-            isNew: true
-        })
-        await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
-            $set: { messageList: messageList }
-        })
+        if (req.auth.userId !== req.body.userId) {
+            // 添加文章消息
+            const { messageList } = await ArticleMessage.findOne({ userId: req.body.authorId })
+            messageList.push({
+                // 发起人
+                userId: req.auth.userId,
+                // 行为
+                content: '取消收藏了您的文章',
+                // 目标
+                articleId: req.body.articleId,
+                // 什么时候干的
+                createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+                // 是否是新消息
+                isNew: true
+            })
+            await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
+                $set: { messageList: messageList }
+            })
+        }
     }
     res.send({
         code: 200,

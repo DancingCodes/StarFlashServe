@@ -20,7 +20,7 @@ router.get('/article/getArticleList', async (req, res) => {
 
     for (let i = 0; i < list.length; i++) {
         // 设置文章作者信息
-        const author = await User.findOne({ userId: list[i].userId })
+        const author = await User.findOne({ userId: list[i].authorId })
         if (author) {
             list[i].userName = author.userName
             list[i].userPcture = author.userPcture
@@ -53,7 +53,7 @@ router.get('/article/getArticleList', async (req, res) => {
 router.post('/article/writeArticle', async (req, res) => {
     await new Article({
         articleContent: req.body.articleContent,
-        userId: req.auth.userId,
+        authorId: req.auth.userId,
         articleId: v4(),
         createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
     }).save()
