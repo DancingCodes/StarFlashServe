@@ -175,9 +175,17 @@ router.get('/user/getArticleList', async (req, res) => {
 
 // 获取收藏文章列表
 router.get('/user/getCollectArticleList', async (req, res) => {
-    const { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
-    const list = await Article.find({ articleId: collectList.map(item => item.articleId) }, { _id: 0, __v: 0 }).skip((req.query.pageNo - 1) * req.query.pageSize).limit(req.query.pageSize).lean()
-    const total = await Article.find({ articleId: collectList.map(item => item.articleId) }).count()
+    let { collectList } = await UserCollectArticle.findOne({ userId: req.auth.userId })
+    const collectArticleIdList = collectList.map(item => item.articleId).reverse()
+    let list = await Article.find({ articleId: collectArticleIdList }, { _id: 0, __v: 0 }).lean()
+    const total = await Article.find({ articleId: collectArticleIdList }).count()
+
+    // 对数组根据用户
+    list = list.sort((a, b) => {
+        return collectArticleIdList.indexOf(a.articleId) < collectArticleIdList.indexOf(b.articleId) ? -1 : 1
+    })
+
+    list = list.splice(req.query.pageNo - 1 * req.query.pageSize, req.query.pageSize)
 
 
     for (let i = 0; i < list.length; i++) {
