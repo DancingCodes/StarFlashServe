@@ -199,25 +199,16 @@ router.put('/user/collectArticle', async (req, res) => {
             createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
         }).save()
 
-        // if (req.auth.userId !== req.body.userId) {
-        //     // 添加文章消息
-        //     const { messageList } = await UserCollectArticle.findOne({ userId: req.body.authorId })
-        //     messageList.unshift({
-        //         // 发起人
-        //         userId: req.auth.userId,
-        //         // 行为
-        //         content: '收藏了您的文章',
-        //         // 目标
-        //         articleId: req.body.articleId,
-        //         // 什么时候干的
-        //         createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-        //         // 是否是新消息
-        //         isNew: true
-        //     })
-        //     await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
-        //         $set: { messageList: messageList }
-        //     })
-        // }
+        if (req.auth.userId !== req.body.userId) {
+            // 添加文章消息
+            new ArticleMessage({
+                userId: req.auth.userId,
+                content: '收藏了您的文章',
+                articleId: req.body.articleId,
+                createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+                isNew: true
+            }).save()
+        }
 
     }
     res.send({
@@ -231,25 +222,17 @@ router.put('/user/cancelCollectArticle', async (req, res) => {
     if (collectArticle) {
         await UserCollectArticle.findOneAndDelete({ userId: req.auth.userId, articleId: req.body.articleId })
 
-        // if (req.auth.userId !== req.body.userId) {
-        //     // 添加文章消息
-        //     const { messageList } = await ArticleMessage.findOne({ userId: req.body.authorId })
-        //     messageList.push({
-        //         // 发起人
-        //         userId: req.auth.userId,
-        //         // 行为
-        //         content: '取消收藏了您的文章',
-        //         // 目标
-        //         articleId: req.body.articleId,
-        //         // 什么时候干的
-        //         createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-        //         // 是否是新消息
-        //         isNew: true
-        //     })
-        //     await ArticleMessage.findOneAndUpdate({ userId: req.body.userId }, {
-        //         $set: { messageList: messageList }
-        //     })
-        // }
+        if (req.auth.userId !== req.body.userId) {
+            // 添加文章消息
+            // 添加文章消息
+            new ArticleMessage({
+                userId: req.auth.userId,
+                content: '取消收藏了您的文章',
+                articleId: req.body.articleId,
+                createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+                isNew: true
+            }).save()
+        }
     }
     res.send({
         code: 200,
