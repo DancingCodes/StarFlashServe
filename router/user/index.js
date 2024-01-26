@@ -252,7 +252,7 @@ router.get('/user/getArticleMessage', async (req, res) => {
 
         list.push({
             ...articleMessageList[i],
-            initiatorName: user.userName,
+            initiatorName: user?.userName ?? '用户已注销',
             articleContent: article.articleContent
         })
     }
