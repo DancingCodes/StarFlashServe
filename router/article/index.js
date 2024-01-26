@@ -76,7 +76,7 @@ router.get('/article/getArticle', async (req, res) => {
 
 // 修改文章
 router.put('/article/modifyArticle', async (req, res) => {
-    await Article.findOneAndUpdate({ articleId: req.body.articleId }, {
+    await Article.updateOne({ articleId: req.body.articleId }, {
         $set: { articleContent: req.body.articleContent }
     })
     res.send({
