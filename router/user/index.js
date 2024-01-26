@@ -72,10 +72,13 @@ router.post('/user/login', async (req, res) => {
 
 // 注销
 router.delete('/user/logoff', async (req, res) => {
-    await User.findOneAndDelete({ userId: req.auth.userId })
+    await User.deleteOne({ userId: req.auth.userId })
+
+    // 删除用户收藏文章列表
+    await UserCollectArticle.deleteMany({ userId: req.auth.userId })
 
     // 删除用户文章消息列表
-    await ArticleMessage.findOneAndDelete({ userId: req.auth.userId })
+    await ArticleMessage.deleteMany({ receiver: req.auth.userId })
 
     res.send({
         code: 200,
@@ -84,7 +87,7 @@ router.delete('/user/logoff', async (req, res) => {
 
 // 修改
 router.put('/user/modifyInfo', async (req, res) => {
-    await User.findOneAndUpdate({ userId: req.auth.userId }, {
+    await User.updateOne({ userId: req.auth.userId }, {
         $set: {
             userPcture: req.body.userPcture,
             userName: req.body.userName,
@@ -99,7 +102,7 @@ router.put('/user/modifyInfo', async (req, res) => {
 router.put('/user/modifyPassword', async (req, res) => {
     const user = await User.findOne({ userId: req.auth.userId })
     if (user.userPassword === req.body.userPassword) {
-        await User.findOneAndUpdate({ userId: user.userId }, {
+        await User.updateOne({ userId: user.userId }, {
             $set: {
                 userPassword: req.body.newUserPassword,
             }
@@ -221,7 +224,7 @@ router.put('/user/collectArticle', async (req, res) => {
 router.put('/user/cancelCollectArticle', async (req, res) => {
     const collectArticle = await UserCollectArticle.findOne({ userId: req.auth.userId, articleId: req.body.articleId })
     if (collectArticle) {
-        await UserCollectArticle.findOneAndDelete({ userId: req.auth.userId, articleId: req.body.articleId })
+        await UserCollectArticle.deleteOne({ userId: req.auth.userId, articleId: req.body.articleId })
 
         if (req.auth.userId !== req.body.authorId) {
             // 添加文章消息

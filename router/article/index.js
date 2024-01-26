@@ -86,7 +86,7 @@ router.put('/article/modifyArticle', async (req, res) => {
 
 // 删除文章
 router.delete('/article/removeArticle', async (req, res) => {
-    await Article.findOneAndDelete({ articleId: req.query.articleId })
+    await Article.deleteOne({ articleId: req.query.articleId })
     res.send({
         code: 200,
     })
