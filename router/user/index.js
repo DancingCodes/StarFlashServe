@@ -2,7 +2,7 @@ const express = require('express');
 
 const User = require('../../mongoDB/user')
 const Article = require('../../mongoDB/article')
-const UserCollectArticle = require('../../mongoDB/UserCollectArticle')
+const UserCollectArticle = require('../../mongoDB/userCollectArticle')
 const ArticleMessage = require('../../mongoDB/articleMessage')
 
 const moment = require('moment')

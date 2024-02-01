@@ -2,7 +2,7 @@ const express = require('express');
 
 const Article = require('../../mongoDB/article')
 const User = require('../../mongoDB/user')
-const UserCollectArticle = require('../../mongoDB/UserCollectArticle')
+const UserCollectArticle = require('../../mongoDB/userCollectArticle')
 
 
 const { v4 } = require('uuid');
