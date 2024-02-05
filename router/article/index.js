@@ -23,13 +23,8 @@ router.get('/article/getArticleList', async (req, res) => {
     for (let i = 0; i < list.length; i++) {
         // 设置文章作者信息
         const author = await User.findOne({ userId: list[i].authorId })
-        if (author) {
-            list[i].userName = author.userName
-            list[i].userPcture = author.userPcture
-        } else {
-            list[i].userName = '用户已注销'
-            list[i].userPcture = `${localPath}/images/loggeOffUser.png`
-        }
+        list[i].userName = author?.userName ?? '用户已注销'
+        list[i].userPcture = author?.userPcture ?? `${localPath}/images/loggeOffUser.png`
 
         // 设置用户是否收藏
         if (user) {

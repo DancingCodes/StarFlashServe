@@ -13,6 +13,8 @@ const router = express.Router();
 
 const jwt = require('jsonwebtoken');
 const secretKey = require('../../utils/jwt');
+const localPath = require('../../public/localPath')
+
 // 注册
 router.post('/user/signUp', async (req, res) => {
     const user = await User.findOne({ userAccount: req.body.userAccount })
@@ -177,8 +179,8 @@ router.get('/user/getCollectArticleList', async (req, res) => {
 
         list.push({
             ...article,
-            userName: author.userName,
-            userPcture: author.userPcture,
+            userName: author?.userName ?? '用户已注销',
+            userPcture: author?.userPcture ?? `${localPath}/images/loggeOffUser.png`,
             collectTime: collectArticleList[i].createTime,
             isCollect: true
         })
