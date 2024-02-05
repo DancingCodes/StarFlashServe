@@ -1,14 +1,14 @@
 // 引入serve
-const serve = require('../../serve')
+const expressServe = require('../../serve')
 
 // 引入JWT
 const { expressjwt } = require('express-jwt');
 module.exports = secretKey = 'StarFlash';
 // JWT还原JSON,使用req.user获取用户信息
-serve.use(expressjwt({ secret: secretKey, algorithms: ['HS256'] }))
+expressServe.use(expressjwt({ secret: secretKey, algorithms: ['HS256'] }))
 
 // 捕获解析JWT失败错误,Token字符串过期或不合法会解析失败
-serve.use((err, req, res, next) => {
+expressServe.use((err, req, res, next) => {
     // jwt白名单接口
     const jwtWhiteApiList = ['/user/signUp', '/user/login', '/uploadFile/uploadImage', '/article/getArticleList']
     const isNext = jwtWhiteApiList.some((item)=> req.originalUrl.includes(item))
