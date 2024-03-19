@@ -12,8 +12,8 @@ if (process.env.NODE_ENV === 'development') {
     // 线上
     const https = require('https')
     serve = https.createServer({
-        key: fs.readFileSync('./static/ssl/api.moonc.love.key'),
-        cert: fs.readFileSync('./static/ssl/api.moonc.love_bundle.crt')
+        key: fs.readFileSync('./static/ssl/starflashapi.moonc.love.key'),
+        cert: fs.readFileSync('./static/ssl/starflashapi.moonc.love_bundle.crt')
     }, app).listen(require('../../public/prot'), () => {
         console.log('Https服务器启动成功啦( ≖ ◡ ≖✿ )')
     });
