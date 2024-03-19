@@ -1,5 +1,5 @@
 // 引入serve
-const expressServe = require('../serve')
+const app = require('../app')
 // 引入express
 const express = require('express');
 
@@ -7,8 +7,8 @@ const express = require('express');
 require('../utils/jwt')
 
 // 获取URL-encoded格式的请求数据（psot接受的请求数据）（必须配置在路由之前）
-expressServe.use(express.urlencoded({ extended: false }))
-expressServe.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+app.use(express.json())
 
 // 导入路由模块
 const user = require('./user')
@@ -17,6 +17,6 @@ const article = require('./article')
 
 
 // 注册路由模块
-expressServe.use(user);
-expressServe.use(uploadFile);
-expressServe.use(article);
+app.use(user);
+app.use(uploadFile);
+app.use(article);

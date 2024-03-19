@@ -2,8 +2,8 @@
 const express = require('express');
 
 // 创建web服务器
-const expressServe = express();
-module.exports = expressServe
+const app = express();
+module.exports = app
 
 // 链接数据库
 require('./mongoDB')

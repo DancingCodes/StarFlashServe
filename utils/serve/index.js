@@ -1,11 +1,11 @@
 // 引入serve
-const expressServe = require('../../serve')
+const app = require('../../app')
 const fs = require('fs')
 let serve = null
-if (process.env.NODE_ENV !== 'development') {
+if (process.env.NODE_ENV === 'development') {
     // 本地
     const http = require('http')
-    serve = http.createServer(expressServe).listen(require('../../public/prot'), () => {
+    serve = http.createServer(app).listen(require('../../public/prot'), () => {
         console.log('Http服务器启动成功啦( ≖ ◡ ≖✿ )')
     });
 } else {
@@ -14,7 +14,7 @@ if (process.env.NODE_ENV !== 'development') {
     serve = https.createServer({
         key: fs.readFileSync('./static/ssl/api.moonc.love.key'),
         cert: fs.readFileSync('./static/ssl/api.moonc.love_bundle.crt')
-    }, expressServe).listen(require('../../public/prot'), () => {
+    }, app).listen(require('../../public/prot'), () => {
         console.log('Https服务器启动成功啦( ≖ ◡ ≖✿ )')
     });
 }
