@@ -7,14 +7,29 @@ const router = express.Router();
 const { v4 } = require('uuid');
 const multer = require("multer");
 
+const fs = require("fs");
+
 // 图片保存路径
 const localPath = require('../../public/localPath')
+
+
+// 设置文件存储路径
+const FileLoadUrl = './uploadFile';
+// 没有文件夹时先创建
+if (!fs.existsSync(FileLoadUrl)) {
+    fs.mkdirSync(FileLoadUrl)
+}
+// 设置图片存储路径
+const imageLoadUrl = './uploadFile/images';
+if (!fs.existsSync(imageLoadUrl)) {
+    fs.mkdirSync(imageLoadUrl)
+}
 
 // 设置图片存储路径
 const storage = multer.diskStorage({
     // 文件保存位置
     destination: (_req, _file, cb) => {
-        cb(null, './uploadFile/images');
+        cb(null, imageLoadUrl);
     },
     // 保存的文件名称
     filename: async (_req, file, cb) => {
